@@ -1,16 +1,9 @@
-import { LayoutDashboard, Users, ListChecks, Inbox } from "lucide-react";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/server/guards";
 import { db } from "@/lib/db";
-import { DashboardShell, StatCard, type NavItem } from "@/components/dashboard/shell";
+import { DashboardShell, StatCard } from "@/components/dashboard/shell";
+import { counselorNav } from "@/components/dashboard/navs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
-const nav: NavItem[] = [
-  { href: "/counselor", label: "Overview", icon: LayoutDashboard },
-  { href: "/counselor", label: "My Students", icon: Users },
-  { href: "/counselor", label: "Task Queue", icon: ListChecks },
-  { href: "/counselor", label: "Leads", icon: Inbox },
-];
 
 export default async function CounselorDashboard() {
   const user = await requireRole(Role.COUNSELOR);
@@ -22,7 +15,7 @@ export default async function CounselorDashboard() {
   ]);
 
   return (
-    <DashboardShell user={user} nav={nav}>
+    <DashboardShell user={user} nav={counselorNav}>
       <h1 className="text-xl font-semibold">Counselor workspace</h1>
       <p className="mt-1 text-sm text-[var(--muted)]">
         Phase 2 — human execution. Manage assigned students, tasks, and incoming leads.

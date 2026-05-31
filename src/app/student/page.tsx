@@ -1,17 +1,11 @@
-import { LayoutDashboard, Sparkles, MessageSquare, FileText, Plane } from "lucide-react";
+import Link from "next/link";
 import { requireUser } from "@/server/guards";
 import { db } from "@/lib/db";
-import { DashboardShell, StatCard, type NavItem } from "@/components/dashboard/shell";
+import { profileCompleteness } from "@/lib/validation/profile";
+import { DashboardShell, StatCard } from "@/components/dashboard/shell";
+import { studentNav } from "@/components/dashboard/navs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-const nav: NavItem[] = [
-  { href: "/student", label: "Overview", icon: LayoutDashboard },
-  { href: "/student", label: "AI Matches", icon: Sparkles },
-  { href: "/student", label: "AI Counselor", icon: MessageSquare },
-  { href: "/student", label: "Applications", icon: FileText },
-  { href: "/student", label: "Travel & Visa", icon: Plane },
-];
 
 export default async function StudentDashboard() {
   const user = await requireUser();
@@ -20,14 +14,31 @@ export default async function StudentDashboard() {
     include: { _count: { select: { matches: true, applications: true, documents: true } } },
   });
 
+  const completeness = profileCompleteness(
+    profile
+      ? {
+          highestQualification: profile.highestQualification,
+          gpa: profile.gpa,
+          percentage: profile.percentage,
+          targetDegreeLevel: profile.targetDegreeLevel,
+          preferredCountries: profile.preferredCountries,
+          preferredSubjects: profile.preferredSubjects,
+          budgetMaxUsd: profile.budgetMaxUsd,
+          careerGoals: profile.careerGoals,
+          testScores: profile.testScores as Record<string, number> | null,
+        }
+      : null,
+  );
+
   return (
-    <DashboardShell user={user} nav={nav}>
+    <DashboardShell user={user} nav={studentNav}>
       <h1 className="text-xl font-semibold">Your journey</h1>
       <p className="mt-1 text-sm text-[var(--muted)]">
         Phase 1 — AI discovery. When you’re ready, hand off to a human counselor for Phase 2 execution.
       </p>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="mt-5 grid gap-4 sm:grid-cols-4">
+        <StatCard label="Profile complete" value={`${completeness}%`} hint="Powers matching" />
         <StatCard label="AI matches" value={profile?._count.matches ?? 0} hint="Best-fit programs" />
         <StatCard label="Applications" value={profile?._count.applications ?? 0} hint="Shortlisted → enrolled" />
         <StatCard label="Documents" value={profile?._count.documents ?? 0} hint="In your vault" />
@@ -36,25 +47,27 @@ export default async function StudentDashboard() {
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Complete your profile</CardTitle>
+            <CardTitle>{completeness === 100 ? "Profile complete" : "Complete your profile"}</CardTitle>
             <CardDescription>
-              Academics, test scores, budget, and goals power the AI matching engine (Epic 2 & 3).
+              Academics, test scores, budget, and goals power the AI matching engine.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button disabled variant="outline">Profile wizard — coming in Epic 2</Button>
+            <Link href="/student/profile">
+              <Button>{completeness > 0 ? "Edit profile" : "Start profile wizard"}</Button>
+            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Talk to a human counselor</CardTitle>
-            <CardDescription>
-              Ready for applications, documents, visa, and travel? Hand off to our team.
-            </CardDescription>
+            <CardTitle>Find programs</CardTitle>
+            <CardDescription>Browse universities and programs across 193 countries with filters.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button disabled>Request counselor — coming in Epic 4</Button>
+            <Link href="/search">
+              <Button variant="outline">Search the catalog</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

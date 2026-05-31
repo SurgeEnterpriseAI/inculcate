@@ -1,17 +1,11 @@
-import { LayoutDashboard, Building2, GraduationCap, Users, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/server/guards";
 import { db } from "@/lib/db";
-import { DashboardShell, StatCard, type NavItem } from "@/components/dashboard/shell";
+import { DashboardShell, StatCard } from "@/components/dashboard/shell";
+import { adminNav } from "@/components/dashboard/navs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
-const nav: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin", label: "Universities", icon: Building2 },
-  { href: "/admin", label: "Programs", icon: GraduationCap },
-  { href: "/admin", label: "Users", icon: Users },
-  { href: "/admin", label: "Analytics", icon: BarChart3 },
-];
+import { Button } from "@/components/ui/button";
 
 export default async function AdminDashboard() {
   // OPS_ADMIN and above may enter.
@@ -26,7 +20,7 @@ export default async function AdminDashboard() {
   ]);
 
   return (
-    <DashboardShell user={user} nav={nav}>
+    <DashboardShell user={user} nav={adminNav}>
       <h1 className="text-xl font-semibold">Operations & admin</h1>
       <p className="mt-1 text-sm text-[var(--muted)]">
         Manage the knowledge base, users, and platform analytics.
@@ -47,10 +41,10 @@ export default async function AdminDashboard() {
             CSV import, manual CRUD (Epic 2), and the conversion funnel (Epic 7) attach here.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-[var(--muted)]">
-            Audit logging is active on privileged actions. Role management is restricted to Super Admin.
-          </p>
+        <CardContent className="flex flex-wrap gap-2">
+          <Link href="/admin/universities"><Button>Manage universities</Button></Link>
+          <Link href="/admin/import"><Button variant="outline">Import CSV</Button></Link>
+          <Link href="/search"><Button variant="outline">Search catalog</Button></Link>
         </CardContent>
       </Card>
     </DashboardShell>
