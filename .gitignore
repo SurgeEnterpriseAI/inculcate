@@ -23,3 +23,9 @@ Thumbs.db
 /storage
 /.turbo
 next-env.d.ts
+
+.vercel
+
+# pulled/temp secret files
+.env.pulled
+*.tmp
