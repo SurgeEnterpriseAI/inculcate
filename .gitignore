@@ -1,0 +1,25 @@
+/node_modules
+/.next
+/out
+/build
+*.log
+npm-debug.log*
+
+# env
+.env
+.env*.local
+
+# prisma
+/prisma/*.db
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# uploads (local storage provider dev vault)
+/storage
+/.turbo
+next-env.d.ts

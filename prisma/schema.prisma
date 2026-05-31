@@ -1,0 +1,477 @@
+// Inculcate — AI-assisted study-abroad platform
+// Data model per build brief §3. Built incrementally across epics; every entity
+// is declared now so all schema changes flow through migrations (rule #6).
+// NOTE: pgvector embedding columns for the matching engine land in Epic 3.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Enums ───────────────────────────
+
+enum Role {
+  STUDENT
+  COUNSELOR
+  OPS_ADMIN
+  SUPER_ADMIN
+}
+
+enum DegreeLevel {
+  CERTIFICATE
+  DIPLOMA
+  BACHELORS
+  MASTERS
+  MBA
+  PHD
+}
+
+enum ApplicationStatus {
+  SHORTLISTED
+  APPLYING
+  SUBMITTED
+  OFFER
+  ACCEPTED
+  VISA
+  ENROLLED
+  REJECTED
+  WITHDRAWN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  ASSIGNED
+  CONVERTED
+  LOST
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}
+
+enum DocumentType {
+  SOP
+  LOR
+  TRANSCRIPT
+  PASSPORT
+  FINANCIAL_PROOF
+  TEST_SCORE
+  RESUME
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum VisaStatus {
+  NOT_STARTED
+  PREPARING
+  SUBMITTED
+  INTERVIEW_SCHEDULED
+  APPROVED
+  REJECTED
+}
+
+enum AccommodationType {
+  DORM
+  PRIVATE
+  HOMESTAY
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  IN_APP
+}
+
+// ─────────────────────────── Auth / Users ───────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String? // null for OAuth-only users
+  role          Role      @default(STUDENT)
+  emailVerified DateTime?
+  image         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // OAuth (future) — kept for forward compatibility
+  accounts Account[]
+  sessions Session[]
+
+  // Domain relations
+  studentProfile     StudentProfile?
+  counselorAssignments CounselorAssignment[] @relation("CounselorUser")
+  assignedTasks      Task[]                @relation("TaskAssignee")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+
+  @@index([role])
+}
+
+// Standard NextAuth models (used if/when OAuth providers are added)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────── Student domain ───────────────────────────
+
+model StudentProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Academics
+  highestQualification String?
+  gpa                  Float?
+  percentage           Float?
+  backlogs             Int?
+
+  // Test scores (JSON: { ielts, toefl, gre, gmat, sat, ... })
+  testScores Json?
+
+  // Preferences
+  targetDegreeLevel DegreeLevel?
+  preferredCountries String[]    @default([])
+  preferredSubjects  String[]    @default([])
+  budgetMinUsd       Int?
+  budgetMaxUsd       Int?
+  intakePreference   String?
+
+  // Background
+  workExperienceYears Float?
+  languages           String[] @default([])
+  careerGoals         String?
+
+  // Phase tracking: discovery (self-serve) -> handed off to a counselor
+  handedOff Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches      Match[]
+  applications Application[]
+  documents    Document[]
+  leads        Lead[]
+  visaCases    VisaCase[]
+  loanCases    LoanCase[]
+}
+
+// ─────────────────────────── University / Program / Scholarship ───────────────────────────
+
+model University {
+  id            String   @id @default(cuid())
+  name          String
+  country       String
+  city          String?
+  worldRanking  Int?
+  accreditations String[] @default([])
+  website       String?
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  programs        Program[]
+  scholarships    Scholarship[]
+  partnerInfo     PartnerUniversity?
+
+  @@unique([name, country])
+  @@index([country])
+}
+
+model Program {
+  id              String      @id @default(cuid())
+  universityId    String
+  university      University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  name            String
+  degreeLevel     DegreeLevel
+  specialization  String?
+  tuitionFeeUsd   Int?
+  durationMonths  Int?
+  intakeDates     String[]    @default([])
+  applicationDeadline DateTime?
+  eligibility     String?
+  languageRequirements String?
+  // embedding  Unsupported("vector(1536)")?  // added in Epic 3 migration
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  scholarships Scholarship[]
+  matches      Match[]
+  applications Application[]
+
+  @@index([degreeLevel])
+  @@index([specialization])
+}
+
+model Scholarship {
+  id           String      @id @default(cuid())
+  name         String
+  scope        String // e.g. "program" | "university" | "country"
+  country      String?
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  programId    String?
+  program      Program?    @relation(fields: [programId], references: [id], onDelete: SetNull)
+  eligibility  String?
+  amountUsd    Int?
+  deadline     DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// ─────────────────────────── Matching ───────────────────────────
+
+model Match {
+  id                 String         @id @default(cuid())
+  studentProfileId   String
+  studentProfile     StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  programId          String
+  program            Program        @relation(fields: [programId], references: [id], onDelete: Cascade)
+  fitScore           Float // 0-100
+  admissionProbability Float // 0-1
+  riskLevel          RiskLevel      @default(MEDIUM)
+  riskFlags          String[]       @default([])
+  aiRationale        String?
+  createdAt          DateTime       @default(now())
+
+  @@unique([studentProfileId, programId])
+  @@index([fitScore])
+}
+
+// ─────────────────────────── Applications (state machine) ───────────────────────────
+
+model Application {
+  id               String            @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  programId        String
+  program          Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  status           ApplicationStatus @default(SHORTLISTED)
+  notes            String?
+  submittedAt      DateTime?
+  decisionAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  tasks                Task[]
+  visaCase             VisaCase?
+  accommodationRequest AccommodationRequest?
+  travelBooking        TravelBooking?
+
+  @@unique([studentProfileId, programId])
+  @@index([status])
+}
+
+// ─────────────────────────── Documents (vault) ───────────────────────────
+
+model Document {
+  id               String             @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  type             DocumentType
+  fileName         String
+  storageKey       String // key in StorageProvider (s3 or local)
+  version          Int                @default(1)
+  verification     VerificationStatus @default(PENDING)
+  verifiedById     String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([studentProfileId, type])
+}
+
+// ─────────────────────────── Phase-2 execution ───────────────────────────
+
+model VisaCase {
+  id            String     @id @default(cuid())
+  applicationId String     @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  country       String
+  status        VisaStatus @default(NOT_STARTED)
+  checklist     Json? // [{ item, required, done }]
+  interviewDate DateTime?
+  interviewPrepNotes String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model AccommodationRequest {
+  id            String            @id @default(cuid())
+  applicationId String            @unique
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          AccommodationType
+  budgetUsd     Int?
+  city          String?
+  status        TaskStatus        @default(TODO)
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model TravelBooking {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromCity      String?
+  toCity        String?
+  departureDate DateTime?
+  status        TaskStatus  @default(TODO)
+  // provider integration stubbed behind FlightProvider interface
+  bookingRef    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model LoanCase {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  amountUsd        Int?
+  partner          String?
+  status           TaskStatus     @default(TODO)
+  // proof-of-funds structuring; loan partner integration stubbed
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+// ─────────────────────────── CRM / tasks / leads ───────────────────────────
+
+model CounselorAssignment {
+  id               String         @id @default(cuid())
+  counselorId      String
+  counselor        User           @relation("CounselorUser", fields: [counselorId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  active           Boolean        @default(true)
+  assignedAt       DateTime       @default(now())
+
+  @@unique([counselorId, studentProfileId])
+  @@index([counselorId])
+}
+
+model Lead {
+  id               String         @id @default(cuid())
+  studentProfileId String?
+  studentProfile   StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  source           String // e.g. "ai-counselor-handoff"
+  status           LeadStatus     @default(NEW)
+  assignedTo       String? // counselor userId
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status])
+}
+
+model Task {
+  id            String      @id @default(cuid())
+  title         String
+  description   String?
+  assigneeId    String?
+  assignee      User?       @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        TaskStatus  @default(TODO)
+  dueDate       DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([assigneeId, status])
+}
+
+model PartnerUniversity {
+  id              String     @id @default(cuid())
+  universityId    String     @unique
+  university      University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  commissionRate  Float? // percentage
+  contactEmail    String?
+  agreementNotes  String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+// ─────────────────────────── Notifications / audit ───────────────────────────
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  body      String?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String // e.g. "user.role.update"
+  entity    String // e.g. "User"
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entity, entityId])
+}

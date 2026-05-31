@@ -1,0 +1,23 @@
+# Postgres with pgvector preinstalled (vector search lands in Epic 3).
+# Usage: docker compose up -d   (requires Docker Desktop)
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: inculcate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: inculcate
+      POSTGRES_PASSWORD: inculcate
+      POSTGRES_DB: inculcate
+    ports:
+      - "5432:5432"
+    volumes:
+      - inculcate-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inculcate -d inculcate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  inculcate-db-data:
