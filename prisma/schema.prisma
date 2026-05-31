@@ -104,6 +104,11 @@ enum NotificationChannel {
   IN_APP
 }
 
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
 // ─────────────────────────── Auth / Users ───────────────────────────
 
 model User {
@@ -202,12 +207,13 @@ model StudentProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  matches      Match[]
-  applications Application[]
-  documents    Document[]
-  leads        Lead[]
-  visaCases    VisaCase[]
-  loanCases    LoanCase[]
+  matches       Match[]
+  applications  Application[]
+  documents     Document[]
+  leads         Lead[]
+  visaCases     VisaCase[]
+  loanCases     LoanCase[]
+  conversations Conversation[]
 }
 
 // ─────────────────────────── University / Program / Scholarship ───────────────────────────
@@ -462,6 +468,32 @@ model Notification {
   createdAt DateTime            @default(now())
 
   @@index([userId, readAt])
+}
+
+// ─────────────────────────── AI counselor chat ───────────────────────────
+
+model Conversation {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([studentProfileId])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  metadata       Json? // e.g. { suggestedProgramIds: [...], offerHandoff: true }
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 model AuditLog {

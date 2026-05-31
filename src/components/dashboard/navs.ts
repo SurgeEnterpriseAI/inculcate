@@ -20,7 +20,7 @@ export const studentNav: NavItem[] = [
   { href: "/student/profile", label: "My Profile", icon: User },
   { href: "/search", label: "Find Programs", icon: Search },
   { href: "/student/matches", label: "AI Matches", icon: Sparkles },
-  { href: "/student", label: "AI Counselor", icon: MessageSquare }, // Epic 4
+  { href: "/student/counselor", label: "AI Counselor", icon: MessageSquare },
   { href: "/student", label: "Applications", icon: FileText }, // Epic 5
 ];
 
