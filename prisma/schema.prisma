@@ -496,6 +496,15 @@ model ChatMessage {
   @@index([conversationId, createdAt])
 }
 
+// Blob store backing the StorageProvider (DB-backed default; S3 is the swap).
+model FileObject {
+  key       String   @id
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 model AuditLog {
   id        String   @id @default(cuid())
   actorId   String?

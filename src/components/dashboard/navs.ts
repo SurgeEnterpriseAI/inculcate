@@ -3,6 +3,7 @@ import {
   Sparkles,
   MessageSquare,
   FileText,
+  FolderLock,
   User,
   Users,
   ListChecks,
@@ -11,6 +12,7 @@ import {
   Upload,
   Search,
   BarChart3,
+  ClipboardList,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { NavItem } from "./shell";
@@ -21,14 +23,15 @@ export const studentNav: NavItem[] = [
   { href: "/search", label: "Find Programs", icon: Search },
   { href: "/student/matches", label: "AI Matches", icon: Sparkles },
   { href: "/student/counselor", label: "AI Counselor", icon: MessageSquare },
-  { href: "/student", label: "Applications", icon: FileText }, // Epic 5
+  { href: "/student/applications", label: "Applications", icon: FileText },
+  { href: "/student/documents", label: "Documents", icon: FolderLock },
 ];
 
 export const counselorNav: NavItem[] = [
   { href: "/counselor", label: "Overview", icon: LayoutDashboard },
-  { href: "/counselor", label: "My Students", icon: Users }, // Epic 5/7
-  { href: "/counselor", label: "Task Queue", icon: ListChecks }, // Epic 5
-  { href: "/counselor", label: "Leads", icon: Inbox }, // Epic 4/7
+  { href: "/counselor/applications", label: "Applications", icon: ClipboardList },
+  { href: "/counselor/tasks", label: "Task Queue", icon: ListChecks },
+  { href: "/counselor", label: "Leads", icon: Inbox }, // CRM lands in Epic 7
   { href: "/search", label: "Catalog", icon: Search },
 ];
 
