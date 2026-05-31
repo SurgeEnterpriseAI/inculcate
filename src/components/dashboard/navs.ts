@@ -4,6 +4,10 @@ import {
   MessageSquare,
   FileText,
   FolderLock,
+  PenLine,
+  ShieldCheck,
+  Wallet,
+  Plane,
   User,
   Users,
   ListChecks,
@@ -25,6 +29,10 @@ export const studentNav: NavItem[] = [
   { href: "/student/counselor", label: "AI Counselor", icon: MessageSquare },
   { href: "/student/applications", label: "Applications", icon: FileText },
   { href: "/student/documents", label: "Documents", icon: FolderLock },
+  { href: "/student/writing", label: "Writing Assistant", icon: PenLine },
+  { href: "/student/visa", label: "Visa", icon: ShieldCheck },
+  { href: "/student/finance", label: "Finance", icon: Wallet },
+  { href: "/student/logistics", label: "Accommodation & Travel", icon: Plane },
 ];
 
 export const counselorNav: NavItem[] = [
