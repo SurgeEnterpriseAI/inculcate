@@ -38,7 +38,7 @@ export function DashboardShell({
         <nav className="space-y-1">
           {nav.map((item) => (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
