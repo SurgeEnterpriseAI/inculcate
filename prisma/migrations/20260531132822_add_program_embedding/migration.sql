@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Program" ADD COLUMN     "embedding" DOUBLE PRECISION[] DEFAULT ARRAY[]::DOUBLE PRECISION[];

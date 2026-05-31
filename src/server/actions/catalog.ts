@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { hasAtLeast } from "@/lib/rbac";
 import { recordAudit } from "@/server/audit";
 import { universitySchema, programSchema, scholarshipSchema } from "@/lib/validation/catalog";
+import { embedText, programText } from "@/server/ai/embedding";
 
 export type ActionResult = { ok: boolean; error?: string; issues?: Record<string, string[] | undefined>; id?: string };
 
@@ -65,7 +66,9 @@ export async function createProgram(universityId: string, input: unknown): Promi
   const parsed = programSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Validation failed", issues: parsed.error.flatten().fieldErrors };
 
-  const prog = await db.program.create({ data: { ...parsed.data, universityId } });
+  const university = await db.university.findUnique({ where: { id: universityId }, select: { name: true, country: true } });
+  const embedding = embedText(programText({ ...parsed.data, degreeLevel: parsed.data.degreeLevel, university }));
+  const prog = await db.program.create({ data: { ...parsed.data, universityId, embedding } });
   await recordAudit({ actorId: actor.id, action: "program.create", entity: "Program", entityId: prog.id, metadata: { universityId } });
   revalidatePath(`/admin/universities/${universityId}`);
   return { ok: true, id: prog.id };

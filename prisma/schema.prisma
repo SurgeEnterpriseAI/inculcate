@@ -245,7 +245,10 @@ model Program {
   applicationDeadline DateTime?
   eligibility     String?
   languageRequirements String?
-  // embedding  Unsupported("vector(1536)")?  // added in Epic 3 migration
+  // Synthetic local embedding (64-dim) for semantic matching (Epic 3).
+  // Stored as a native float array for reliability; pgvector ANN is the
+  // documented production swap (same EmbeddingProvider interface).
+  embedding       Float[]     @default([])
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

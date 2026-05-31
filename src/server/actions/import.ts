@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { hasAtLeast } from "@/lib/rbac";
 import { recordAudit } from "@/server/audit";
 import { csvRowSchema } from "@/lib/validation/catalog";
+import { embedText, programText } from "@/server/ai/embedding";
 
 export interface ImportResult {
   ok: boolean;
@@ -83,6 +84,14 @@ export async function importCatalogCsv(csvText: string): Promise<ImportResult> {
           where: { universityId: uni.id, name: d.program, degreeLevel: d.degreeLevel },
         });
         if (!existing) {
+          const embedding = embedText(
+            programText({
+              name: d.program,
+              specialization: d.specialization,
+              degreeLevel: d.degreeLevel,
+              university: { name: uni.name, country: uni.country },
+            }),
+          );
           await db.program.create({
             data: {
               universityId: uni.id,
@@ -91,6 +100,7 @@ export async function importCatalogCsv(csvText: string): Promise<ImportResult> {
               specialization: d.specialization,
               tuitionFeeUsd: d.tuitionFeeUsd,
               durationMonths: d.durationMonths,
+              embedding,
             },
           });
           result.programsCreated++;
