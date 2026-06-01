@@ -4,7 +4,7 @@ AI-assisted study-abroad platform — **AI elevates, humans execute.** AI handle
 data-heavy discovery and matching across universities in 193 countries; expert
 counselors handle applications, documents, visas, accommodation, and travel.
 
-> Built in epics. This README documents **Epic 1 — Foundation**.
+> **All 7 epics complete.** Live demo: https://inculcate.vercel.app
 
 ## Stack
 
@@ -12,23 +12,25 @@ counselors handle applications, documents, visas, accommodation, and travel.
 |---|---|
 | Frontend | Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn-style UI |
 | Backend | Next.js Route Handlers + Server Actions (modular service layer in `src/server`) |
-| DB | PostgreSQL + pgvector (vector search arrives in Epic 3) |
-| ORM | Prisma (migration-first) |
+| DB | PostgreSQL (Neon) + Prisma (migration-first) |
 | Auth | Auth.js (NextAuth v5), credentials + JWT sessions, RBAC |
-| AI | Anthropic Claude (server-only) — Epics 3–6 |
-| Storage / Notifications | Swappable provider interfaces — stubbed until keys exist |
+| AI | **Synthetic, key-free** engines behind swappable provider interfaces (Claude API drops in later) |
+| Storage / Integrations | Swappable interfaces — DB-backed blob store + stubbed flight/loan providers |
 
-## What Epic 1 delivers
+## Features by epic
 
-- Project scaffold, TypeScript, Tailwind, Docker compose for Postgres (pgvector).
-- **Full §3 data model** in Prisma (`prisma/schema.prisma`) — every entity declared so all
-  future schema changes flow through migrations.
-- **Auth + RBAC** for four roles: `STUDENT`, `COUNSELOR`, `OPS_ADMIN`, `SUPER_ADMIN`.
-  - Edge middleware (`middleware.ts`) gates routes by role via `src/lib/rbac.ts`.
-  - Self-registration always creates a STUDENT (no client-side role escalation).
-  - Audit logging on privileged actions (`src/server/audit.ts`).
-- **Role-based dashboards**: `/student`, `/counselor`, `/admin`.
-- **Seed data**: one user per role + demo universities/programs/scholarships.
+1. **Foundation** — scaffold, full data model, Auth.js + 4-role RBAC, audit log, role dashboards, seed.
+2. **Profile & Catalog** — student intake wizard; admin university/program/scholarship CRUD; CSV import; filtered search.
+3. **AI Matching** — synthetic embeddings + matching engine → fit score, admission probability, risk + rationale; compare & shortlist (`/student/matches`).
+4. **AI Counselor** — profile-aware RAG chat over the catalog + "talk to a human" handoff → Lead + counselor notification (`/student/counselor`).
+5. **Applications & Tasks** — application state machine + deadline tracker; document vault (DB-backed storage) with RBAC download; counselor task queue.
+6. **Phase-2 Execution** — SOP/LOR/essay assistant; visa cases with country checklists; finance estimator + loan tracking; accommodation + travel (stubbed flights).
+7. **CRM & Analytics** — lead pipeline + assignment; conversion funnel, counselor performance, partner-university/commission tracking (`/admin/analytics`).
+
+> All AI/integration is synthetic and key-free per the demo brief — each lives behind an interface
+> (`EmbeddingProvider`, `CounselorProvider`, `StorageProvider`, `FlightProvider`, writing provider)
+> so a real Claude/embedding/S3/GDS backend swaps in without touching callers. No "visa/admission
+> guarantee" copy anywhere; AI outputs are flagged for human review.
 
 ## Prerequisites
 
@@ -81,7 +83,9 @@ Password for all: `Passw0rd!`
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` | Create/apply migrations (dev) |
 | `npm run db:push` | Push schema without a migration (quick prototyping) |
-| `npm run db:seed` | Seed demo data |
+| `npm run db:seed` | Seed core users + a few demo universities |
+| `npm run db:seed:catalog` | Generate the synthetic catalog (~36 unis / ~99 programs, embedded) |
+| `npm run db:seed:crm` | Generate synthetic students/applications/leads for analytics |
 | `npm run db:studio` | Prisma Studio (browse data) |
 | `npm run db:reset` | Drop, re-migrate, re-seed |
 

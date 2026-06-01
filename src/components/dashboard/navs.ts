@@ -39,7 +39,7 @@ export const counselorNav: NavItem[] = [
   { href: "/counselor", label: "Overview", icon: LayoutDashboard },
   { href: "/counselor/applications", label: "Applications", icon: ClipboardList },
   { href: "/counselor/tasks", label: "Task Queue", icon: ListChecks },
-  { href: "/counselor", label: "Leads", icon: Inbox }, // CRM lands in Epic 7
+  { href: "/counselor/leads", label: "Leads", icon: Inbox },
   { href: "/search", label: "Catalog", icon: Search },
 ];
 
@@ -48,7 +48,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/universities", label: "Universities", icon: Building2 },
   { href: "/admin/import", label: "Import CSV", icon: Upload },
   { href: "/search", label: "Search Catalog", icon: Search },
-  { href: "/admin", label: "Analytics", icon: BarChart3 }, // Epic 7
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 /** Pick the nav appropriate to a user's role (used by shared pages like /search). */

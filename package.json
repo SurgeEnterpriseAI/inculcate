@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:catalog": "tsx prisma/seed-synthetic.ts",
+    "db:seed:crm": "tsx prisma/seed-crm.ts",
     "db:reset": "prisma migrate reset --force",
     "db:studio": "prisma studio"
   },

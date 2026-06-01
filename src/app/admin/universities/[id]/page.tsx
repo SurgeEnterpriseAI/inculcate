@@ -9,6 +9,7 @@ import { adminNav } from "@/components/dashboard/navs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UniversityForm } from "@/components/admin/university-form";
 import { ProgramManager, ScholarshipManager, DeleteUniversityButton } from "@/components/admin/catalog-managers";
+import { PartnerForm } from "@/components/admin/partner-form";
 
 export default async function UniversityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,6 +19,7 @@ export default async function UniversityDetailPage({ params }: { params: Promise
     include: {
       programs: { orderBy: { name: "asc" } },
       scholarships: { orderBy: { name: "asc" } },
+      partnerInfo: true,
     },
   });
   if (!uni) notFound();
@@ -68,6 +70,20 @@ export default async function UniversityDetailPage({ params }: { params: Promise
             <ScholarshipManager
               universityId={uni.id}
               scholarships={uni.scholarships.map((s) => ({ id: s.id, name: s.name, scope: s.scope, amountUsd: s.amountUsd }))}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Partner agreement & commission</CardTitle></CardHeader>
+          <CardContent>
+            <PartnerForm
+              universityId={uni.id}
+              initial={{
+                commissionRate: uni.partnerInfo?.commissionRate,
+                contactEmail: uni.partnerInfo?.contactEmail,
+                agreementNotes: uni.partnerInfo?.agreementNotes,
+              }}
             />
           </CardContent>
         </Card>
